@@ -13,10 +13,10 @@ $ source env/bin/activate
 $ pip install -r requirements.txt
 ```
 
-How to use
-==========
+Usage
+=====
 
-Usage: 
+``` 
 ./strip-silence.py [-h] [-r] [--target-dir TARGET_DIR]
 
 optional arguments:
@@ -24,5 +24,5 @@ optional arguments:
   -r                    Recursively go through directories.
   --target-dir TARGET_DIR
                         Directory to strip silence from
-
+```
 [pydub]:(http://pydub.com/)
