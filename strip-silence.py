@@ -16,23 +16,16 @@ def main(target_dir, recursive=True):
         if not f.endswith('.mp3'):
             continue
 
-        print 'Working on: ' + f
+        print('Working on: ' + f)
         song = AudioSegment.from_mp3(f)
 
-        # filter out the silence from the beginning
-        for i, ms in enumerate(song):
-            if ms.rms > 0:
-                song = song[i:]
-                break
-
-        # reverse the song and do the same thing
-        song = song[::-1]
-        for i, ms in enumerate(song):
-            if ms.rms > 0:
-                song = song[i:]
-                # reverse it back
-                song = song[::-1]
-                break
+        for x in range(2):
+            # filter out the silence from the beginning/end
+            for i, ms in enumerate(song):
+                if ms.rms > 0:
+                    song = song[i:]
+                    break
+            song = song[::-1]
 
         # save the result
         song.export(f, format="mp3")
