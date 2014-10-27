@@ -49,7 +49,9 @@ def remove_silence(f):
         return
 
     # save the result
-    song.export(f, format="mp3")
+    song.export(f + '.new', format="mp3")
+    os.remove(f)
+    os.rename(f + '.new', f)
     with lock:
         print('Finished: ' + f)
 
