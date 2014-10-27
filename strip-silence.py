@@ -44,10 +44,6 @@ def remove_silence(f):
     # Check to see if song length changed. (Did we remove silence?)
     after = len(song)
     if before == after:
-        return
-
-    # Check if we need to re-export the song.
-    if song == original:
         with lock:
             print(f + ' was unaltered.')
         return
