@@ -8,6 +8,7 @@ import os
 from queue import Queue
 import threading
 
+
 lock = threading.Lock()
 
 
@@ -53,20 +54,21 @@ def worker():
         q.task_done()
 
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Strips silence from songs ' +
                                      'the specified target directory.')
     parser.add_argument('-r', help='Recursively go through directories.',
                         action='store_true')
     parser.add_argument('--target-dir', help='Directory to strip silence from')
+    parser.add_argument('--threads', help='Number of threads to use',
+                        default=5)
     args = parser.parse_args()
     if not args.target_dir:
         parser.print_help()
         raise Exception('Please provide a target directory.')
 
     q = Queue()
-    for i in range(20):
+    for i in range(int(args.threads)):
         t = threading.Thread(target=worker)
         t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
         t.start()
