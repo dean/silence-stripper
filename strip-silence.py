@@ -31,7 +31,7 @@ def remove_silence(f):
         print('Working on: ' + f)
 
     song = AudioSegment.from_mp3(f)
-    original = song[:]
+    before = len(song)
 
     for x in range(2):
         # filter out the silence from the beginning/end
@@ -40,6 +40,11 @@ def remove_silence(f):
                 song = song[i:]
                 break
         song = song[::-1]
+
+    # Check to see if song length changed. (Did we remove silence?)
+    after = len(song)
+    if before == after:
+        return
 
     # Check if we need to re-export the song.
     if song == original:
