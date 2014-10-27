@@ -5,30 +5,54 @@ from pydub.utils import db_to_float
 
 import argparse
 import os
+from queue import Queue
+import threading
+
+lock = threading.Lock()
+
 
 # Let's load up the audio we need...
-def main(target_dir, recursive=True):
+def get_files(target_dir, recursive=True):
+    paths = []
     for f in os.listdir(target_dir):
         f = os.path.join(target_dir, f)
         if recursive and os.path.isdir(f):
-            main(f)
+            paths.extend(get_files(f))
             continue
         if not f.endswith('.mp3'):
             continue
+        paths.append(f)
+    return paths
 
+
+def remove_silence(f):
+    with lock:
         print('Working on: ' + f)
-        song = AudioSegment.from_mp3(f)
 
-        for x in range(2):
-            # filter out the silence from the beginning/end
-            for i, ms in enumerate(song):
-                if ms.rms > 0:
-                    song = song[i:]
-                    break
-            song = song[::-1]
+    song = AudioSegment.from_mp3(f)
 
-        # save the result
-        song.export(f, format="mp3")
+    for x in range(2):
+        # filter out the silence from the beginning/end
+        for i, ms in enumerate(song):
+            if ms.rms > 0:
+                song = song[i:]
+                break
+        song = song[::-1]
+
+    # save the result
+    song.export(f, format="mp3")
+    with lock:
+        print('Finished: ' + f)
+
+
+# The worker thread pulls an item from the queue and processes it
+def worker():
+    while True:
+        f = q.get()
+        remove_silence(f)
+        q.task_done()
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Strips silence from songs ' +
@@ -40,4 +64,14 @@ if __name__ == '__main__':
     if not args.target_dir:
         parser.print_help()
         raise Exception('Please provide a target directory.')
-    main(args.target_dir, recursive=args.r)
+
+    q = Queue()
+    for i in range(20):
+        t = threading.Thread(target=worker)
+        t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
+        t.start()
+
+    for f in get_files(args.target_dir, recursive=args.r):
+        q.put(f)
+
+    q.join()
