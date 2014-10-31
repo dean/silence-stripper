@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
+import argparse
+from multiprocessing import Pool
+import os
+
 from pydub import AudioSegment
 from pydub.utils import db_to_float
-
-import argparse
-import asyncio
-import os
 
 
 # Let's load up the audio we need...
@@ -22,13 +22,12 @@ def get_files(target_dir, recursive=True):
     return paths
 
 
-@asyncio.coroutine
 def remove_silence(f):
-    print('Working on: ' + f)
-
     song = AudioSegment.from_mp3(f)
-    before = len(song)
+    if song[0].rms != 0 and song[-1].rms != 0:
+        return
 
+    print('Working on: ' + f)
     for x in range(2):
         # filter out the silence from the beginning/end
         for i, ms in enumerate(song):
@@ -36,12 +35,6 @@ def remove_silence(f):
                 song = song[i:]
                 break
         song = song[::-1]
-
-    # Check to see if song length changed. (Did we remove silence?)
-    after = len(song)
-    if before == after:
-        print(f + ' was unaltered.')
-        return
 
     # save the result
     song.export(f + '.new', format="mp3")
@@ -61,7 +54,8 @@ if __name__ == '__main__':
         parser.print_help()
         raise Exception('Please provide a target directory.')
 
-    tasks = asyncio.wait([remove_silence(f) for f in
-                          get_files(args.target_dir, recursive=args.r)])
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(tasks)
+    with Pool(processes=10) as pool:
+        files = get_files(args.target_dir, recursive=args.r)
+        result = pool.map_async(remove_silence, files).get()
+        print('Finished completely.')
+
